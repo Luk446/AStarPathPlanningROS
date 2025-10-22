@@ -1,2 +1,0 @@
-B31YS_path_planning_assignment_ROS1/src/navigation_testing:B31YS_path_planning_assignment_ROS1/src/rosbot_bringup:B31YS_path_planning_assignment_ROS1/src/rosbot_description:B31YS_path_planning_assignment_ROS1/src/rosbot_gazebo:B31YS_path_planning_assignment_ROS1/src/rosbot_navigation
--DCATKIN_DEVEL_PREFIX=/home/luke/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/luke/catkin_ws/install -G Unix Makefiles
