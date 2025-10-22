@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="luke_edgecombe" default="default"/>
+  
+  <node name="test_node" pkg="rosbot_navigation" type="a_star_planner_grid.py" output="screen">
+    <param name="luke_edgecombe" value="$(arg luke_edgecombe)"/>
+  </node>
+</launch>
