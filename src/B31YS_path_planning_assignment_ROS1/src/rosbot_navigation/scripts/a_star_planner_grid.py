@@ -66,7 +66,7 @@ class AStarPlanner:
 
         # Run Astart here 
         # This is your time to code, what are arguments that need to be passed? 
-        found, path = self.astar(False) 
+        found, path = self.astar(graph, start, goal) 
 
         if found:
             rospy.loginfo(f"Path found with {len(path)} steps.")
@@ -265,13 +265,68 @@ class AStarPlanner:
         path.reverse()  # Reverse the path to get it from start to goal
         return path
 
-    def astar(self, empty):
+    def astar(self, graph, start, goal):
         """
         Perform A Star's algorithm to find the shortest path from start to goal.
         
+        Need to define a heuristic func and the logic for the algo
+    
         """
-        print("Where am I going?")
-        print("What is my purpose?")
+
+        # importing heapq for priority queue
+        import heapq
+
+        def heuristic(a, b): # Manhattan distance heuristic
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        
+        if start == goal: # check if start and goal are the same
+            return True, [start]
+
+        # define the three lists
+        open_heap = [] # use processing queue
+        open_nodes = set() # discovered nodes
+        visited = set() # fully explored nodes
+        parent = {} # to reconstruct path
+        g_score = {start: 0} # cost from start to current node
+
+        # init heap 
+        start_f = heuristic(start, goal) # f = g + h
+        heapq.heappush(open_heap, (start_f, 0, start)) # push start node with f score
+        open_nodes.add(start) # mark start as discovered
+
+        # main loop
+        while open_heap: # continue until goal or nothing left
+            
+            f, g, current = heapq.heappop(open_heap) # get node with lowest f score
+
+            # skip if a 'bad' node
+            if current in visited:
+                continue
+
+            open_nodes.discard(current) # remove from discovered
+            visited.add(current) # mark as fully explored
+
+            # test for the goal
+            if current == goal:
+                return True, self.backtrace(parent, start, goal) # found it!
+            
+            # iterate over the connected neighbours
+            for neighbor in graph.get(current, []):
+                if neighbor in visited: # dont go to closed nodes
+                    continue
+
+                # unit move cost (weight)
+                tentative_g = g_score[current] + 1
+
+
+                if tentative_g < g_score.get(neighbor, float('inf')):
+
+                    parent[neighbor] = current # record path
+                    g_score[neighbor] = tentative_g # update best 
+                    f_neighbor = tentative_g + heuristic(neighbor,goal) # 
+                    heapq.heappush(open_heap, (f_neighbor, tentative_g, neighbor))
+                    open_nodes.add(neighbor)
+
         
         # No path found
         return False, []
