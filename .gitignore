@@ -5,6 +5,11 @@ install/
 logs/
 log/
 .catkin_tools/
+test_results/
+gtest/
+
+# ROS user cache
+.ros/
 
 # Python cache
 __pycache__/
@@ -13,6 +18,8 @@ __pycache__/
 # Other common ignores
 *.swp
 *.DS_Store
+.vscode/
+.idea/
 
 # If you accidentally created these in root
 CMakeCache.txt
