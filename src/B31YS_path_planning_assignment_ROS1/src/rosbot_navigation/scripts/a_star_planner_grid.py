@@ -127,7 +127,7 @@ class AStarPlanner:
                 return True  # Goal is reachable
             
             # Explore neighbors
-            for neighbor in self.get_neighbors(current):
+            for neighbor, _step_cost in self.get_neighbors_cost(current):
                 if neighbor not in visited:
                     visited.add(neighbor)
                     queue.append(neighbor)
@@ -231,12 +231,36 @@ class AStarPlanner:
         neighbors = [(x+1,y), (x-1,y), (x,y+1), (x,y-1)]
         return [n for n in neighbors if self.is_free(n)]
 
+    def get_neighbors_cost(self, cell):
+        """
+        Get valid 8-connected neighbors with their movement costs (Euclidean).
+        
+        - Orthogonal moves cost 1
+        - Diagonal moves cost sqrt(2)
+        
+        :param cell: Grid cell coordinates (gx, gy)
+        :return: List of tuples [(neighbor_cell, step_cost), ...]
+        """
+        x, y = cell
+        directions = [
+            (1, 0, 1.0),  (-1, 0, 1.0),  (0, 1, 1.0),  (0, -1, 1.0),
+            (1, 1, math.sqrt(2)),  (1, -1, math.sqrt(2)),  (-1, 1, math.sqrt(2)),  (-1, -1, math.sqrt(2))
+        ]
+
+        result = []
+        for dx, dy, cost in directions:
+            nx, ny = x + dx, y + dy
+            neighbor = (nx, ny)
+            if self.is_free(neighbor):
+                result.append((neighbor, cost))
+        return result
+
     def build_graph(self):
         """
         Build an adjacency list representation of the grid map.
         Only includes free cells and their valid neighbors.
         
-        :return: Graph (adjacency list), where keys are cells and values are lists of neighboring cells
+        :return: Graph (adjacency list), where keys are cells and values are lists of (neighbor, step_cost)
         """
         graph = {}
         width = self.map_data.info.width
@@ -246,7 +270,7 @@ class AStarPlanner:
             for x in range(width):
                 if self.is_free((x, y)):  # Only include free cells
                     node = (x, y)
-                    graph[node] = self.get_neighbors(node)  # Get neighbors for each free cell
+                    graph[node] = self.get_neighbors_cost(node)  # Get neighbors (with costs) for each free cell
 
         return graph
 
@@ -270,21 +294,25 @@ class AStarPlanner:
         Perform A Star's algorithm to find the shortest path from start to goal.
         
         Need to define a heuristic func and the logic for the algo
+        - using euclidian as we want to include diagonals
     
+        - using heapq module for processing
+        - defining three list 
+
         """
 
         # importing heapq for priority queue
         import heapq
 
-        def heuristic(a, b): # Manhattan distance heuristic
-            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        def heuristic(a, b):
+            # Euclidean distance heuristic suitable for 8-connected grids
+            return math.hypot(a[0] - b[0], a[1] - b[1])
         
         if start == goal: # check if start and goal are the same
             return True, [start]
 
         # define the three lists
         open_heap = [] # use processing queue
-        open_nodes = set() # discovered nodes
         visited = set() # fully explored nodes
         parent = {} # to reconstruct path
         g_score = {start: 0} # cost from start to current node
@@ -292,18 +320,20 @@ class AStarPlanner:
         # init heap 
         start_f = heuristic(start, goal) # f = g + h
         heapq.heappush(open_heap, (start_f, 0, start)) # push start node with f score
-        open_nodes.add(start) # mark start as discovered
 
         # main loop
         while open_heap: # continue until goal or nothing left
             
             f, g, current = heapq.heappop(open_heap) # get node with lowest f score
 
+            # skip stale entries (older, worse g for same node)
+            if g != g_score.get(current, float('inf')):
+                continue
+
             # skip if a 'bad' node
             if current in visited:
                 continue
 
-            open_nodes.discard(current) # remove from discovered
             visited.add(current) # mark as fully explored
 
             # test for the goal
@@ -311,21 +341,20 @@ class AStarPlanner:
                 return True, self.backtrace(parent, start, goal) # found it!
             
             # iterate over the connected neighbours
-            for neighbor in graph.get(current, []):
+            for neighbor, step_cost in graph.get(current, []):
                 if neighbor in visited: # dont go to closed nodes
                     continue
 
-                # unit move cost (weight)
-                tentative_g = g_score[current] + 1
+                # movement cost (orthogonal = 1, diagonal = sqrt(2))
+                tentative_g = g_score[current] + step_cost
 
 
                 if tentative_g < g_score.get(neighbor, float('inf')):
 
                     parent[neighbor] = current # record path
                     g_score[neighbor] = tentative_g # update best 
-                    f_neighbor = tentative_g + heuristic(neighbor,goal) # 
+                    f_neighbor = tentative_g + heuristic(neighbor, goal)
                     heapq.heappush(open_heap, (f_neighbor, tentative_g, neighbor))
-                    open_nodes.add(neighbor)
 
         
         # No path found
@@ -354,7 +383,6 @@ class AStarPlanner:
 
         # Publish the path to the /planned_path topic
         self.path_pub.publish(path)
-
 
 if __name__ == '__main__':
     try:
