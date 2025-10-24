@@ -288,7 +288,7 @@ class AStarPlanner:
             path.append(parent[path[-1]])
         path.reverse()  # Reverse the path to get it from start to goal
         return path
-
+# Starting Here: 
     def astar(self, graph, start, goal):
         """
         Perform A Star's algorithm to find the shortest path from start to goal.
@@ -297,7 +297,11 @@ class AStarPlanner:
         - using euclidian as we want to include diagonals
     
         - using heapq module for processing
-        - defining three list 
+
+        tuts used:
+        https://www.geeksforgeeks.org/python/a-search-algorithm-in-python/
+        https://www.datacamp.com/tutorial/a-star-algorithm
+        - construrct path finding module
 
         """
 
@@ -353,8 +357,8 @@ class AStarPlanner:
 
                     parent[neighbor] = current # record path
                     g_score[neighbor] = tentative_g # update best 
-                    f_neighbor = tentative_g + heuristic(neighbor, goal)
-                    heapq.heappush(open_heap, (f_neighbor, tentative_g, neighbor))
+                    f_neighbor = tentative_g + heuristic(neighbor, goal) # find score for neighbor
+                    heapq.heappush(open_heap, (f_neighbor, tentative_g, neighbor)) # push into heap list
 
         
         # No path found
